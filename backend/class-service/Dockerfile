@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:24-jdk AS builder
 WORKDIR /app
 
 COPY gradlew ./
@@ -10,11 +10,11 @@ RUN chmod +x gradlew
 
 COPY src ./src
 
-# Offline Build (nutzt lokale Caches, schneller & stabiler)
-RUN ./gradlew bootJar -x test --no-daemon --offline
+# Build (allow network fetches; remove --offline which fails inside build context)
+RUN ./gradlew bootJar -x test --no-daemon
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:24-jre
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,20 +1,14 @@
-# Use official Node.js image as the base
-FROM node:20-alpine
-
-# Set working directory
+# Build stage: compile React app
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the app
+# Install production dependencies (falls kein package-lock vorhanden ist, nutzt npm install)
+RUN npm install --production
 COPY . .
+RUN npm run build
 
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Start the React app
-CMD ["npm", "start"]
+# Production stage: serve static files with nginx
+FROM nginx:stable-alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
